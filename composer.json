@@ -1,0 +1,11 @@
+{
+    "name": "mellev/di4php",
+    "license": "BSD-3",
+    "authors": [
+        {
+            "name": "Mikhail Denisenko",
+            "email": "mellev@outlook.com"
+        }
+    ],
+    "require": {}
+}
