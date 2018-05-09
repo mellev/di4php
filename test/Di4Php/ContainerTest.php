@@ -5,6 +5,8 @@ use Di4Php\Container;
 use Di4Php\Exception\ClassIsNotInstantiableException;
 use Di4Php\Exception\ClassNotFoundException;
 use Di4Php\Exception\ContractNotFoundException;
+use Di4Php\Exception\ServiceNotRegisteredException;
+use Di4Php\ServiceInstantiator;
 use Di4Php\Test\Mocks\EmptyService;
 use Di4Php\Test\Mocks\EmptyService2;
 use Di4Php\Test\Mocks\AbstractEmptyService;
@@ -56,5 +58,29 @@ class ContainerTest extends TestCase
     public function testSuccessRegisterClassWithAbstractClassContract()
     {
         $this->assertNull((new Container())->add(EmptyService::class,AbstractEmptyService::class));
+    }
+
+    public function testServiceExists()
+    {
+        $container = new Container();
+        $container->add(EmptyService::class);
+
+        $this->assertTrue($container->serviceExists(EmptyService::class));
+        $this->assertFalse($container->serviceExists(EmptyService2::class));
+    }
+
+    public function testGetServiceInstantiator()
+    {
+        $container = new Container();
+        $container->add(EmptyService::class);
+        $this->assertInstanceOf(
+            ServiceInstantiator::class,
+            $container->getServiceInstantiator(EmptyService::class));
+    }
+
+    public function testGetServiceInstantiatorForNotRegisteredService()
+    {
+        $this->expectException(ServiceNotRegisteredException::class);
+        (new Container)->getServiceInstantiator(EmptyService2::class);
     }
 }

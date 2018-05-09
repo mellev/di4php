@@ -26,7 +26,7 @@ class Container
      */
     public function add(string $class, string $contact = null)
     {
-        $this->services[$contact] = new Service($class, $contact);
+        $this->services[$contact ?? $class] = new Service($class, $contact);
     }
 
     /**
@@ -40,7 +40,7 @@ class Container
             throw new ServiceNotRegisteredException;
         }
 
-        return new ServiceInstantiator($this->services[$contract]);
+        return new ServiceInstantiator($this->services[$contract], $this);
     }
 
     /**
