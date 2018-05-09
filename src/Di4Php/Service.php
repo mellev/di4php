@@ -22,6 +22,11 @@ class Service
     private $class;
 
     /**
+     * @var SharedInstance
+     */
+    private $sharedInstance;
+
+    /**
      * Service constructor.
      * @param string $contract
      * @param string $class
@@ -53,12 +58,14 @@ class Service
 
         $this->contract = $contract;
         $this->class = $class;
+
+        $this->sharedInstance = new SharedInstance($this);
     }
 
     /**
      * @return string
      */
-    public function getClass()
+    public function getClass(): string
     {
         return $this->class;
     }
@@ -66,16 +73,24 @@ class Service
     /**
      * @return string
      */
-    public function getContract()
+    public function getContract(): string
     {
         return $this->contract;
     }
 
     /**
-     * @param $class
+     * @return SharedInstance
+     */
+    public function getSharedInstance(): SharedInstance
+    {
+        return $this->sharedInstance;
+    }
+
+    /**
+     * @param string $class
      * @return bool
      */
-    public function checkClassIsInstantiable(string $class)
+    private function checkClassIsInstantiable(string $class): bool
     {
         $reflectionClass = new \ReflectionClass($class);
         return $reflectionClass->isInstantiable();

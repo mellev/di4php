@@ -17,44 +17,44 @@ class ContainerTest extends TestCase
 	public function testRegisterNotExistenClass()
 	{
         $this->expectException(ClassNotFoundException::class);
-        (new Container())->registerService(EmptyService::class . 'Null');
+        (new Container())->add(EmptyService::class . 'Null');
 	}
 
     public function testRegisterAbstractClass()
     {
         $this->expectException(ClassIsNotInstantiableException::class);
-        (new Container())->registerService(AbstractEmptyService::class);
+        (new Container())->add(AbstractEmptyService::class);
     }
 
     public function testRegisterPrivateConstructorClass()
     {
         $this->expectException(ClassIsNotInstantiableException::class);
-        (new Container())->registerService(PrivateConstructorEmptyService::class);
+        (new Container())->add(PrivateConstructorEmptyService::class);
     }
 
     public function testRegisterNotExistenContract()
     {
         $this->expectException(ContractNotFoundException::class);
-        (new Container())->registerService(EmptyService::class,EmptyService::class . 'Null');
+        (new Container())->add(EmptyService::class,EmptyService::class . 'Null');
     }
 
     public function testSuccessRegisterClass()
     {
-        $this->assertNull((new Container())->registerService(EmptyService::class));
+        $this->assertNull((new Container())->add(EmptyService::class));
     }
 
     public function testSuccessRegisterClassWithInterfaceContract()
     {
-        $this->assertNull((new Container())->registerService(EmptyService::class, EmptyServiceInterface::class));
+        $this->assertNull((new Container())->add(EmptyService::class, EmptyServiceInterface::class));
     }
 
     public function testSuccessRegisterClassWithClassContract()
     {
-        $this->assertNull((new Container())->registerService(EmptyService::class, EmptyService2::class));
+        $this->assertNull((new Container())->add(EmptyService::class, EmptyService2::class));
     }
 
     public function testSuccessRegisterClassWithAbstractClassContract()
     {
-        $this->assertNull((new Container())->registerService(EmptyService::class,AbstractEmptyService::class));
+        $this->assertNull((new Container())->add(EmptyService::class,AbstractEmptyService::class));
     }
 }
