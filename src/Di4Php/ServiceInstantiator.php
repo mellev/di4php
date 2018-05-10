@@ -4,6 +4,7 @@ namespace Di4Php;
 use Di4Php\Exception\ArgumentCountException;
 use Di4Php\Exception\TypeMismatchException;
 use Di4Php\Exception\ServiceNotRegisteredException;
+use Di4Php\Exception\LoopDependencyException;
 
 /**
  * Class ServiceInstantiator
@@ -39,7 +40,7 @@ class ServiceInstantiator
      * @throws ServiceNotRegisteredException
      * @throws TypeMismatchException
      */
-    public function instantiate(array $args = [])
+    public function instantiate(array $args = [], $chain = [])
     {
         $reflectionClass = new \ReflectionClass($this->service->getClass());
         $constructor = $reflectionClass->getConstructor();
@@ -50,6 +51,7 @@ class ServiceInstantiator
 
         $resultArguments = [];
         $usedArgIndex = 0;
+        $chain[] = $this->service->getContract();
 
         foreach ($constructor->getParameters() as $parameter) {
             if (array_key_exists($parameter->getName(), $args)) {
@@ -59,9 +61,12 @@ class ServiceInstantiator
                     throw new TypeMismatchException;
                 }
             } else if ($parameter->getClass() && $this->container->serviceExists($parameter->getClass()->getName())) {
+                if (in_array($parameter->getClass()->getName(), $chain)) {
+                    throw new LoopDependencyException();
+                }
                 $resultArguments[$parameter->getPosition()] = $this->container
                     ->getServiceInstantiator($parameter->getClass()->getName())
-                    ->instantiate();
+                    ->instantiate([], $chain);
             } else if (array_key_exists($usedArgIndex, $args)) {
                 if ($this->checkType($parameter, $args[$usedArgIndex])) {
                     $resultArguments[$parameter->getPosition()] = $args[$usedArgIndex];
