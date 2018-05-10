@@ -44,44 +44,48 @@ class ServiceInstantiator
     {
         $reflectionClass = new \ReflectionClass($this->service->getClass());
         $constructor = $reflectionClass->getConstructor();
-
-        if ($constructor === null) {
-            return $reflectionClass->newInstance();
-        }
-
         $resultArguments = [];
-        $usedArgIndex = 0;
-        $chain[] = $this->service->getContract();
 
-        foreach ($constructor->getParameters() as $parameter) {
-            if (array_key_exists($parameter->getName(), $args)) {
-                if ($this->checkType($parameter, $args[$parameter->getName()])) {
-                    $resultArguments[$parameter->getPosition()] = $args[$parameter->getName()];
+        if ($constructor !== null) {
+            $usedArgIndex = 0;
+            $chain[] = $this->service->getContract();
+    
+            foreach ($constructor->getParameters() as $parameter) {
+                if (array_key_exists($parameter->getName(), $args)) {
+                    if ($this->checkType($parameter, $args[$parameter->getName()])) {
+                        $resultArguments[$parameter->getPosition()] = $args[$parameter->getName()];
+                    } else {
+                        throw new TypeMismatchException;
+                    }
+                } else if ($parameter->getClass() && $this->container->serviceExists($parameter->getClass()->getName())) {
+                    if (in_array($parameter->getClass()->getName(), $chain)) {
+                        throw new LoopDependencyException();
+                    }
+                    $resultArguments[$parameter->getPosition()] = $this->container
+                        ->getServiceInstantiator($parameter->getClass()->getName())
+                        ->instantiate([], $chain);
+                } else if (array_key_exists($usedArgIndex, $args)) {
+                    if ($this->checkType($parameter, $args[$usedArgIndex])) {
+                        $resultArguments[$parameter->getPosition()] = $args[$usedArgIndex];
+                        $usedArgIndex++;
+                    } else {
+                        throw new TypeMismatchException;
+                    }
+                } else if ($parameter->isDefaultValueAvailable()) {
+                    $resultArguments[$parameter->getPosition()] = $parameter->getDefaultValue();
                 } else {
-                    throw new TypeMismatchException;
+                    throw new ArgumentCountException;
                 }
-            } else if ($parameter->getClass() && $this->container->serviceExists($parameter->getClass()->getName())) {
-                if (in_array($parameter->getClass()->getName(), $chain)) {
-                    throw new LoopDependencyException();
-                }
-                $resultArguments[$parameter->getPosition()] = $this->container
-                    ->getServiceInstantiator($parameter->getClass()->getName())
-                    ->instantiate([], $chain);
-            } else if (array_key_exists($usedArgIndex, $args)) {
-                if ($this->checkType($parameter, $args[$usedArgIndex])) {
-                    $resultArguments[$parameter->getPosition()] = $args[$usedArgIndex];
-                    $usedArgIndex++;
-                } else {
-                    throw new TypeMismatchException;
-                }
-            } else if ($parameter->isDefaultValueAvailable()) {
-                $resultArguments[$parameter->getPosition()] = $parameter->getDefaultValue();
-            } else {
-                throw new ArgumentCountException;
             }
         }
 
-        return $reflectionClass->newInstanceArgs($resultArguments);
+        $instance = $reflectionClass->newInstanceArgs($resultArguments);
+
+        if ($instance instanceof OnInitInterface) {
+            $instance->onInit();
+        }
+
+        return $instance;
     }
 
     /**
